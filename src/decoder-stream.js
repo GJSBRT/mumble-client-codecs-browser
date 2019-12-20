@@ -1,12 +1,12 @@
 import { Transform } from 'stream'
 import createPool from 'reuse-pool'
-import webworkify from 'webworkify'
+import webworkify from 'webworkify-webpack'
 import toArrayBuffer from 'to-arraybuffer'
 
 import decodeWorker from './decode-worker'
 
 const pool = createPool(function () {
-  return webworkify(decodeWorker)
+  return webworkify(require.resolve('./decode-worker'), { 'all': true })
 })
 // Prepare first worker
 pool.recycle(pool.get())
