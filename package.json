@@ -1,6 +1,6 @@
 {
   "name": "@gsbrt/mumble-client-codecs-browser",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Mumble protocol client library - pure js codecs",
   "main": "index.js",
   "scripts": {
