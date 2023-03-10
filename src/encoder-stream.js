@@ -1,63 +1,53 @@
 import { Transform } from 'stream'
 import createPool from 'reuse-pool'
-import webworkify from 'webworkify-webpack'
-
-import encodeWorker from './encode-worker'
 
 const pool = createPool(function () {
-  return webworkify(require.resolve('./encode-worker'), { 'all': true })
+    return new Worker(new URL('./encode-worker', import.meta.url))
 })
-// Prepare first worker
-pool.recycle(pool.get())
 
 class EncoderStream extends Transform {
-  constructor (codec) {
-    super({ objectMode: true })
+    constructor(codec) {
+        super({ objectMode: true })
 
-    this._codec = codec
+        this._codec = codec
 
-    this._worker = pool.get()
-    this._worker.onmessage = msg => {
-      if (this._worker.objectURL) {
-        // The object URL can now be revoked as the worker has been loaded
-        window.URL.revokeObjectURL(this._worker.objectURL)
-        this._worker.objectURL = null
-      }
-      this._onMessage(msg.data)
+        this._worker = pool.get()
+        this._worker.onmessage = ({ data }) => {
+            this._onMessage(data)
+        }
     }
-  }
 
-  _onMessage (data) {
-    if (data.reset) {
-      pool.recycle(this._worker)
-      this._finalCallback()
-    } else {
-      this.push({
-        target: data.target,
-        codec: this._codec,
-        frame: Buffer.from(data.buffer, data.byteOffset, data.byteLength),
-        position: data.position
-      })
+    _onMessage(data) {
+        if (data.reset) {
+            pool.recycle(this._worker)
+            this._finalCallback()
+        } else {
+            this.push({
+                target: data.target,
+                codec: this._codec,
+                frame: new Uint8Array(data.buffer),
+                position: data.position
+            })
+        }
     }
-  }
 
-  _transform (chunk, encoding, callback) {
-    var buffer = chunk.pcm.slice().buffer
-    this._worker.postMessage({
-      action: 'encode' + this._codec,
-      target: chunk.target,
-      buffer: buffer,
-      numberOfChannels: chunk.numberOfChannels,
-      bitrate: chunk.bitrate,
-      position: chunk.position
-    }, [buffer])
-    callback()
-  }
+    _transform(chunk, encoding, callback) {
+        const buffer = chunk.pcm.slice().buffer
+        this._worker.postMessage({
+            action: `encode${this._codec}`,
+            target: chunk.target,
+            buffer: buffer,
+            numberOfChannels: chunk.numberOfChannels,
+            bitrate: chunk.bitrate,
+            position: chunk.position
+        }, [buffer])
+        callback()
+    }
 
-  _final (callback) {
-    this._worker.postMessage({ action: 'reset' })
-    this._finalCallback = callback
-  }
+    _final(callback) {
+        this._worker.postMessage({ action: 'reset' })
+        this._finalCallback = callback
+    }
 }
 
 export default EncoderStream

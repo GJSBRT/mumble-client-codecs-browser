@@ -25,7 +25,8 @@
     "lib"
   ],
   "devDependencies": {
-    "babel-cli": "^6.14.0",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@babel/cli": "^7.21.0",
     "babel-preset-es2015": "^6.14.0",
     "chai": "^3.5.0",
     "mocha": "^3.0.2",
@@ -33,10 +34,10 @@
     "standard": "^8.0.0"
   },
   "dependencies": {
-    "libopus.js": "0.0.1",
+    "babel-preset-es2020": "^1.0.2",
     "libcelt7.js": "0.0.1",
+    "libopus.js": "0.0.1",
     "reuse-pool": "^1.0.2",
-    "to-arraybuffer": "^1.0.1",
-    "webworkify-webpack": "^2.1.5"
+    "to-arraybuffer": "^1.0.1"
   }
 }
